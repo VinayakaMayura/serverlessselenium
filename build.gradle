@@ -1,0 +1,58 @@
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'serverlessscaling'
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    include '**/ExampleTestSuite.class'
+}
+
+dependencies {
+    compile group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '2.41.0'
+    compile group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '1.1.0'
+    compile group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.1.0'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.208'
+    compile group: 'junit', name: 'junit', version:'4.12'
+    compile 'commons-lang:commons-lang:2.3'
+
+}
+
+task unzipLibs(type: Copy) {
+    def libs = file('../awslambdaselenium/bin/lib.zip')
+    def resources = file("${projectDir}/src/main/resources/")
+
+    from zipTree(libs)
+    into resources
+}
+
+task zipLibs(type: Zip) {
+    from processResources
+    archiveName 'lib.zip'
+    destinationDir(file('../bin/'))
+}
+
+shadowJar {
+    from sourceSets.test.output
+    configurations = [ project.configurations.testRuntime ]
+}
+
+task deploy(type: Exec) {
+    commandLine 'sls', 'deploy'
+}
